@@ -163,7 +163,15 @@ namespace StudiesManagementSystem
             }
         }
 
-        //TODO: UPDATE SEMESTER
+        
+        public static void UpdateSemesterAllStudents()
+        {
+            //TODO:
+            //IF STUDENTSTATUS=1 => STUDENTSTATUS=2 ON CURRENT FOSSTUDENT
+            //                      AND ADD FOSSTUDENT WITH SEMESTERID=+1
+            //                      AND ADD STUDENT TO CLASSES
+            //IF SEMESTERID=10 => STUDENTSTATUS=4
+        }
 
         public static string StudentStatusToString(int Studentstatus)
         {
@@ -171,8 +179,9 @@ namespace StudiesManagementSystem
             {
                 case 0: return "candidate"; break;
                 case 1: return "active"; break;
-                case 2: return "inactive"; break;
-                case 3: return "graduate"; break;
+                case 2: return "finished"; break;
+                case 3: return "inactive"; break;
+                case 4: return "graduate"; break;
                 default: return "undefined"; break;
             }
         }
