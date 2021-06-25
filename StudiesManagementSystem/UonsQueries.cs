@@ -205,7 +205,7 @@ namespace StudiesManagementSystem
             }
         }
         
-        public static void GetAverageGradeOfStudent(int studentId)
+        public static double? GetAverageGradeOfStudent(int studentId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
@@ -216,10 +216,13 @@ namespace StudiesManagementSystem
                     var studentName = uctx.Students.Where(c => c.StudentId == studentId).Select(c => new { c.FirstName, c.LastName }).SingleOrDefault();
 
                     Console.WriteLine($"{studentName.FirstName.ToUpper()} {studentName.LastName.ToUpper()}, AVERAGE GRADE: {string.Format("{0:F2}", averageGrade)}");
+
+                    return averageGrade;
                 }
                 catch (System.NullReferenceException nre)
                 {
                     Console.WriteLine("ERROR! Index doesn't exist!");
+                    return null;
                 }
             }
 
