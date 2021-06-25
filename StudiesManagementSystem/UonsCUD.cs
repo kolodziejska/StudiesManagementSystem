@@ -147,7 +147,7 @@ namespace StudiesManagementSystem
         }
 
         public static void ChangeStudentStatus(int studentID, int FosID, int studentStatus)
-        {
+        { //TODO: THIS HAS TO DEPEND ALSO ON SEMESTERID - SEE: UPDATESEMESTERSSTUDENT
             using (var uctx = new UniversityOfNowhereContext())
             {
                 var studentfos = uctx.FosStudents.Where(s => s.StudentId == studentID && s.FosId == FosID).SingleOrDefault();
@@ -164,13 +164,33 @@ namespace StudiesManagementSystem
         }
 
         
-        public static void UpdateSemesterAllStudents()
-        {
-            //TODO:
-            //IF STUDENTSTATUS=1 => STUDENTSTATUS=2 ON CURRENT FOSSTUDENT
-            //                      AND ADD FOSSTUDENT WITH SEMESTERID=+1
-            //                      AND ADD STUDENT TO CLASSES
-            //IF SEMESTERID=10 => STUDENTSTATUS=4
+        public static void UpdateSemesterStudent(int studentId)
+        { 
+            //TODO: IF STUDENTSTATUS = 1
+            using (var uctx= new UniversityOfNowhereContext())
+            {
+                var fosSemester = uctx.FosStudents.Where(f => f.StudentId == studentId).Select(s=>new {s.FosId, s.SemesterId }).Single();
+
+                Uons.ChangeStudentStatus(studentId, fosSemester.FosId, 2);
+
+                var fosstudent = new FosStudent
+                {
+                    StudentId = studentId,
+                    StudentStatus = 1,
+                    FosId = fosSemester.FosId,
+                    SemesterId = fosSemester.SemesterId + 1
+                };
+
+                uctx.Add<FosStudent>(fosstudent);
+
+                uctx.SaveChanges();
+
+                Uons.AddStudentToClasses(studentId);
+                
+
+            }
+
+            
         }
 
         public static string StudentStatusToString(int Studentstatus)

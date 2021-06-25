@@ -110,7 +110,7 @@ namespace StudiesManagementSystem.Models
 
             modelBuilder.Entity<FosStudent>(entity =>
             {
-                entity.HasKey(e => new { e.FosId, e.StudentId })
+                entity.HasKey(e => new { e.FosId, e.StudentId, e.SemesterId })
                     .HasName("PK_FosStudent");
 
                 entity.Property(e => e.FosId).HasColumnName("FOS_ID");
@@ -130,6 +130,7 @@ namespace StudiesManagementSystem.Models
                 entity.HasOne(d => d.Semester)
                     .WithMany(p => p.FosStudents)
                     .HasForeignKey(d => d.SemesterId)
+                    .OnDelete(DeleteBehavior.ClientSetNull)
                     .HasConstraintName("FK__FosStuden__Semes__6383C8BA");
 
                 entity.HasOne(d => d.Student)

@@ -1,33 +1,34 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System;
+using Xunit;
 using StudiesManagementSystem;
 using System.IO;
 
-namespace SMSTestProject
+namespace SMSxUnitTestProject
 {
-    [TestClass]
     public class UnitTest_SMSQueries
     {
+           
         private string? expected = null;
 
-        [TestMethod]
+        [Fact]
         public void Test_GetAverageGradeOfStudent()
         {
-            double actual = 4.00;
+            double expected = 4.00;
             double res = (double)Uons.GetAverageGradeOfStudent(1);
-            Assert.AreEqual(res, actual, 0.001, "NOT EQUAL");
+            Assert.Equal(expected, res);
         }
 
-        [TestMethod]
-        public void Test_GetAverageGradeOfStudentIndexOutOfBounds()
+        [Fact]
+        public void Test_GetAverageGradeOfStudent_IndexOutOfBounds()
         {
-            double? res = Uons.GetAverageGradeOfStudent(10000);
-            Assert.IsNull(res);
-                  
+            int studentId = 10000;
+            double? res = Uons.GetAverageGradeOfStudent(studentId);
+            Assert.Null(res);
+
         }
 
         
-        [TestMethod]
+        [Fact]
         public void Test_GetAverageGradeOfClass()
         {
             string grade = string.Format("{0:F2}", 4.07);
@@ -36,12 +37,15 @@ namespace SMSTestProject
             using (var sw = new StringWriter())
             {
                 Console.SetOut(sw);
-                Uons.GetAverageGradeOfClass(1);                
+                Uons.GetAverageGradeOfClass(1);
 
                 var result = sw.ToString().Trim();
-                Assert.AreEqual(expected, result);
+                Assert.Equal(expected, result);
             }
-        }
 
+            var standardOutput = new StreamWriter(Console.OpenStandardOutput());
+            Console.SetOut(standardOutput);
+        }
     }
 }
+
