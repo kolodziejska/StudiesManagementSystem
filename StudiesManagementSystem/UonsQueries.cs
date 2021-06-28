@@ -1,382 +1,277 @@
-﻿using System;
+﻿using Microsoft.EntityFrameworkCore;
+using StudiesManagementSystem.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using StudiesManagementSystem.Models;
-using System.Globalization;
-using Microsoft.EntityFrameworkCore;
 
 namespace StudiesManagementSystem
 {
-    public static partial class Uons
+    public class UonsQueries
     {
-        // QUERIES
 
-        //TODO: SEARCH THROUGH STUDENT/FOS/FACULTY NAME, NOT ID
-
-        /*
-         * student queries */
-        
-        
-        public static void ShowStudentOfId(int StudentId)
+        public Student GetStudent(int studentId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var student = uctx.Students.Where(s => s.StudentId == StudentId).SingleOrDefault();
+                return uctx.Students.Where(s => s.StudentId == studentId).SingleOrDefault();
+            }
+        }
 
-                var allfos = uctx.FosStudents.Where(s=>s.StudentId==StudentId)   
-                                 .Include(f=>f.Fos)
-                                 .Include(f=>f.Semester)
+        public List<FosStudent> GetFosStudentList(int studentId)
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.FosStudents.Where(s => s.StudentId == studentId)
+                                 .Include(f => f.Fos)
+                                 .Include(f => f.Semester)
                                  .ToList();
-
-                Console.WriteLine(student.ToString());
-
-                //TODO: format string
-                foreach (var fos in allfos) {
-
-                    Console.WriteLine($"{fos.Fos.FosName} {fos.Semester.SemesterName}, student status: {Uons.StudentStatusToString(fos.StudentStatus)}");
-                }
             }
         }
 
-        
-        public static void ShowStudentsFromClass(int ClassId)
+        public List<FosStudent> GetActiveFosStudentList(int studentId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var students = from grade in uctx.Grades
-                               join student in uctx.Students on grade.StudentId equals student.StudentId
-                               where grade.ClassId == ClassId
-                               orderby student.LastName
-                               select new
-                               {
-                                   studentName = student.FirstName,
-                                   studentSurname = student.LastName,
-                                   gradeValue = grade.GradeValue
-                               };
-
-                string className = uctx.Classes.Where(c=>c.ClassId==ClassId).Select(c=>c.ClassName).FirstOrDefault();
-
-                var studentsList = students.ToList();
-
-                Console.WriteLine(className.ToUpper());
-
-                foreach (var student in studentsList)
-                {
-                    Console.WriteLine($"{student.studentName} {student.studentSurname}, grade: {student.gradeValue}");
-                }
+                return uctx.FosStudents.Where(s => s.StudentId == studentId && s.StudentStatus==1)
+                                 .Include(f => f.Fos)
+                                 .Include(f => f.Semester)
+                                 .ToList();
             }
         }
 
-        
-        public static void ShowStudentsFromFOSSemester(int fosId, int semesterId)
+        public FosStudent GetActiveFosStudent(int studentId, int fosId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var students = uctx.FosStudents
-                    .Where(f => f.FosId == fosId && f.SemesterId == semesterId)
-                    .Select(f => new { student = f.Student, studentstatus=f.StudentStatus })
-                    .OrderBy(f=>f.student.LastName);
-                        
-                string fosName = uctx.FieldOfStudies.Where(p => p.FosId == fosId).Select(p => p.FosName).FirstOrDefault();
-                string semesterInfo = uctx.Semesters.Where(p => p.SemesterId == semesterId).Select(p => p.SemesterName).FirstOrDefault();
-
-                Console.WriteLine($"{fosName.ToUpper()}, {semesterInfo.ToUpper()}");
-
-                foreach (var student in students)
-                {
-                    if (student.studentstatus == 1)
-                    {
-                        Console.WriteLine(student.student.ToString());
-                    }
-                }
+                return uctx.FosStudents.Where(s => s.StudentId == studentId && s.StudentStatus == 1 && s.FosId==fosId)
+                                 .Include(f => f.Fos)
+                                 .Include(f => f.Semester)
+                                 .SingleOrDefault();
             }
         }
 
-        public static void ShowAllClassesOfStudent(int studentID)
+        public string GetClassName(int classId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var classes = uctx.Grades.Where(g => g.StudentId == studentID)
-                    .Include(g => g.Class)
-                    .ThenInclude(c=>c.Fos)
-                    .ToList();
-
-                foreach (var clas in classes)
-                {
-                    Console.WriteLine($"{clas.ClassId} {clas.Class.ClassName} {clas.GradeValue} {clas.Class.Fos.FosName}");
-                }
-
+                return uctx.Classes.Where(c => c.ClassId == classId).Select(c => c.ClassName).FirstOrDefault();
             }
         }
 
-
-        /*
-         * professor queries */
-        
-        public static void ShowAllProfs()
+        public Class GetClassInfo(int classId)
         {
-
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var allProfs = uctx.Professors.Include(p => p.Fos).ThenInclude(f => f.Faculty)
-                                .AsEnumerable()
-                                .OrderBy(p => p.Fos.FacultyId).ThenBy(p => p.LastName)
-                                .GroupBy(p => p.Fos.Faculty.FacultyName);
-                                
-                          
-                foreach (var faculty in allProfs)
-                {
-                    Console.WriteLine(faculty.Key.ToUpper());
-
-                    foreach (var prof in faculty)
-                    {
-                        Console.WriteLine($"{prof.FirstName} {prof.LastName}, {prof.AcademicDegree}, {prof.Fos.Faculty.FacultyName}, {prof.Fos.FosName}");
-                        Console.WriteLine($"\t email: {prof.Email}, phone number: {prof.PhoneNumber}, address: {prof.Address}, {prof.City}");
-                    }
-
-                    Console.WriteLine();
-
-                }
+                return uctx.Classes.Where(c => c.ClassId == classId).SingleOrDefault();
             }
         }
-        
-        
-        public static void ShowProfsFromFaculty(int facultyID)
+
+        public List<Grade> GetStudentsFromClass(int classId)
         {
+            var classInfo = GetClassInfo(classId);
+            
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var allProfs = uctx.Professors
-                                .Include(p => p.Fos)
-                                .Where(p => p.Fos.FacultyId == facultyID)
-                                .OrderBy(p => p.LastName)
+                var students = uctx.FosStudents.Where(s => s.StudentStatus == 1 && s.FosId == classInfo.FosId && s.SemesterId == classInfo.SemesterId)
+                                .Join(uctx.Grades, fosstudent => fosstudent.StudentId, grade => grade.StudentId, (fosstudent, grade) => grade)
+                                .Where(c=>c.ClassId==classId)
+                                .Include(g => g.Student)
+                                .OrderBy(g => g.Student.LastName)
                                 .ToList();
-                                
-                string facultyName = uctx.Faculties.Where(p=>p.FacultyId==facultyID).Select(p=>p.FacultyName).FirstOrDefault();
 
-                Console.WriteLine(facultyName.ToUpper());
-
-                foreach (var prof in allProfs)
-                {
-                    Console.WriteLine($"{prof.FirstName} {prof.LastName}, {prof.AcademicDegree}, {prof.Fos.FosName}");
-                    Console.WriteLine($"\t\t email: {prof.Email}, phone number: {prof.PhoneNumber}, address: {prof.Address}, {prof.City}");
-                }
+                return students;
             }
         }
-        
-        
-        public static void ShowClassesFromProf(int profId)
+
+        public string GetFosName(int fosId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var Classes = uctx.Classes
+                return uctx.FieldOfStudies.Where(p => p.FosId == fosId).Select(p => p.FosName).FirstOrDefault();
+            }
+        }
+
+        public string GetSemesterName(int semesterId)
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.Semesters.Where(p => p.SemesterId == semesterId).Select(p => p.SemesterName).FirstOrDefault();
+            }
+        }
+
+        public List<FosStudent> GetStudentsFromFosSemester (int fosId, int semesterId)
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.FosStudents
+                    .Where(f => f.FosId == fosId && f.SemesterId == semesterId && f.StudentStatus==1)
+                    .Include(f => f.Student)
+                    .OrderBy(f => f.Student.LastName).ToList();
+            }
+        }
+
+        public List<Grade> GetAllClassesOfStudent (int studentId)
+        {
+            var studentfosList = GetActiveFosStudentList(studentId);
+
+            var classesList = new List<Grade>();
+
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                foreach (var studentfos in studentfosList)
+                {
+                    var fosclassesList = uctx.Grades
+                                             .Where(g => g.StudentId == studentId&&g.Class.FosId==studentfos.FosId&&g.Class.SemesterId==studentfos.SemesterId)
+                                             .Include(g => g.Class)
+                                             .ThenInclude(c => c.Fos)
+                                             .ToList();
+                    classesList.AddRange(fosclassesList);
+                }
+                return classesList;
+            }
+        }
+
+        public List<Grade> GetAllClassesOfStudent (int studentId, int fosId)
+        {
+            try
+            {
+                var studentfos = GetActiveFosStudent(studentId, fosId);
+
+                using (var uctx = new UniversityOfNowhereContext())
+                {
+                    return uctx.Grades.Where(g => g.StudentId == studentId && g.Class.FosId == studentfos.FosId && g.Class.SemesterId == studentfos.SemesterId)
+                                      .Include(g => g.Class)
+                                      .ThenInclude(c => c.Fos)
+                                      .ToList();
+                }
+            }
+            catch (Exception nre)
+            {
+                Console.WriteLine("ERROR! Index doesn't exist!");//TODO: THROW EXCEPTION?
+                return null;
+            }
+        }
+
+        public List<Professor> GetAllProfsInOrder()
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.Professors.Include(p => p.Fos).ThenInclude(f => f.Faculty)
+                                    .AsEnumerable()
+                                    .OrderBy(p => p.Fos.FacultyId).ThenBy(p => p.LastName)
+                                    .ToList();
+            }
+        }
+
+        public List<Professor> GetAllProfsFromFaculty(int facultyId)
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.Professors
+                                    .Include(p => p.Fos)
+                                    .Where(p => p.Fos.FacultyId == facultyId)
+                                    .OrderBy(p => p.LastName)
+                                    .ToList();
+            }
+        }
+
+        public string GetFacultyName(int facultyId)
+        {
+            using (var uctx = new UniversityOfNowhereContext())
+            {
+                return uctx.Faculties.Where(p => p.FacultyId == facultyId).Select(p => p.FacultyName).FirstOrDefault();
+            }
+        }
+
+        public List<Class> GetClassesOfProfessor(int profId)
+        {
+            using (var uctx = new UniversityOfNowhereContext()){
+                return uctx.Classes
                                 .Where(c => c.ProfId == profId)
                                 .Include(c => c.Fos)
                                 .Include(c => c.Semester)
                                 .ToList();
-                
-                var professorInfo = uctx.Professors.Where(p => p.ProfId==profId).Select(p => new { p.FirstName, p.LastName, p.AcademicDegree }).FirstOrDefault();
-
-                Console.WriteLine("Professor: " + professorInfo.FirstName + " " + professorInfo.LastName + ", " + professorInfo.AcademicDegree);
-                Console.WriteLine();
-
-                foreach (var clas in Classes)
-                {
-                    Console.WriteLine(clas.ClassName + " || " + clas.Fos.FosName + " || " + clas.Semester.SemesterName);
-                }
             }
-
         }
 
-
-        /*
-         * grades queries */
-        
-        public static void GetAverageGradeOfClass(int classId)
+        public Professor GetProfInfo(int profId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                double? averageGrade = uctx.Grades.Where(r => r.ClassId == classId).Average(r => r.GradeValue);
-
-                string className = uctx.Classes.Where(c => c.ClassId == classId).Select(c => c.ClassName).SingleOrDefault();
-
-                Console.WriteLine($"{className.ToUpper()}, AVERAGE GRADE: {string.Format("{0:F2}", averageGrade)}");
+                return uctx.Professors.Where(p => p.ProfId == profId).FirstOrDefault();
             }
         }
-        
-        public static double? GetAverageGradeOfStudent(int studentId)
+
+        public double? GetAverageGradeOfClass(int classId)
+        {
+            var studentsList = GetStudentsFromClass(classId);
+
+            double? averageGrade = studentsList.Average(s => s.GradeValue);
+
+            return averageGrade;
+           
+        }
+
+        public double? GetAverageGradeOfStudent(int studentId, int fosId)
+        {      
+            var gradesList = GetAllClassesOfStudent(studentId, fosId);
+
+            if (gradesList != null) { 
+            double? averageGrade = gradesList.Average(r => r.GradeValue);
+
+               return averageGrade;
+            }
+            else
+            {  //TODO: SHOULD IT THROW EXCEPTION
+               return null;
+            }
+        }
+
+        public List<KeyValuePair<Student, double?>> GetAverageStudentGradesFromFaculty(int facultyId)
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                try
+                var studentsList = uctx.FosStudents
+                           .Where(s => s.Fos.FacultyId == facultyId && s.StudentStatus==1)
+                           .Include(s => s.Student)
+                           .ToList();
+
+                var studentsAverageList = new List<KeyValuePair<Student, double?>>();
+
+                foreach (var student in studentsList)
                 {
-                    double? averageGrade = uctx.Grades.Where(r => r.StudentId == studentId).Average(r => r.GradeValue);
-
-                    var studentName = uctx.Students.Where(c => c.StudentId == studentId).Select(c => new { c.FirstName, c.LastName }).SingleOrDefault();
-
-                    Console.WriteLine($"{studentName.FirstName.ToUpper()} {studentName.LastName.ToUpper()}, AVERAGE GRADE: {string.Format("{0:F2}", averageGrade)}");
-
-                    return averageGrade;
+                    double? averageGrade = GetAverageGradeOfStudent(student.StudentId, student.FosId);
+                    studentsAverageList.Add(new KeyValuePair <Student, double?>(student.Student, averageGrade));
                 }
-                catch (System.NullReferenceException nre)
-                {
-                    Console.WriteLine("ERROR! Index doesn't exist!");
-                    return null;
-                }
+
+                return studentsAverageList;
             }
-
         }
-        
-        public static void ShowHighestAverageFaculty(int facultyId)
+
+        public IEnumerable<KeyValuePair<Student,double?>> GetHighestAverageFromFaculty(int facultyId)
+        {
+            var studentsList = GetAverageStudentGradesFromFaculty(facultyId);
+            
+            return studentsList.Where(s => s.Value == studentsList.Max(s => s.Value)).Select(s => s).AsEnumerable();
+        }
+
+        public List<Grade> GetHighestGradesInClass (int classId)
+        {
+            var studentsList = GetStudentsFromClass(classId);
+
+            return studentsList.Where(s => s.GradeValue == studentsList.Max(g => g.GradeValue)).ToList();
+        }
+
+        public List<FieldOfStudy> GetAllFieldOfStudies()
         {
             using (var uctx = new UniversityOfNowhereContext())
             {
-                var studentlist = uctx.FosStudents
-                                    .Where(s => s.Fos.FacultyId == facultyId)
-                                    .Include(s=>s.Student)
-                                    .Select(s => new { s, average = s.Student.Grades.Average(g => g.GradeValue) })
-                                    .ToList();
-                                    
-
-                var bestStudents = studentlist.Where(s => s.average == studentlist.Max(s => s.average)).Select(s => s);
-                            
-
-                string facultyName = uctx.Faculties.Where(f => f.FacultyId == facultyId).Select(f=>f.FacultyName).SingleOrDefault();
-
-                Console.WriteLine($"HIGHEST AVERAGE GRADE FROM {facultyName.ToUpper()}");
-
-                foreach (var student in bestStudents)
-                {
-                    Console.WriteLine($"{student.s.Student.FirstName} {student.s.Student.LastName} {string.Format("{0:F2}", student.average)}");
-                }
-      
-            }
-        }
-        
-        public static void ShowHighestAverageFaculty(int facultyId, int NumberOfEntries)
-        {
-            using (var uctx = new UniversityOfNowhereContext())
-            {
-                var students = uctx.FosStudents
-                                .Where(s => s.Fos.FacultyId == facultyId)
-                                .Select(s => new { student = s.Student, average = s.Student.Grades.Average(g => g.GradeValue) })
-                                .OrderByDescending(s => s.average)
-                                .Take(NumberOfEntries);
-
-                string facultyName = uctx.Faculties.Where(f => f.FacultyId == facultyId).Select(f => f.FacultyName).Single();
-
-                Console.WriteLine($"{NumberOfEntries} HIGHEST AVERAGE GRADES FROM {facultyName.ToUpper()}");
-
-                foreach (var student in students)
-                {
-                    Console.WriteLine($"{student.student.FirstName} {student.student.LastName} {string.Format("{0:F2}", student.average)}");
-                }
-
-            }
-        }
-        
-        public static void ShowAboveAverageFaculty(int facultyId, double average)
-        {
-            using (var uctx = new UniversityOfNowhereContext())
-            {
-                var students = uctx.FosStudents
-                            .Where(s => s.Fos.FacultyId == facultyId)
-                            .Select(s => new { student=s.Student, average = s.Student.Grades.Average(g => g.GradeValue) })
-                            .Where(s=>s.average>average)
-                            .OrderByDescending(s => s.average);
-
-                string facultyName = uctx.Faculties.Where(f => f.FacultyId == facultyId).Select(f => f.FacultyName).Single();
-
-                Console.WriteLine($"AVERAGE GRADES ABOVE {average} FROM {facultyName.ToUpper()}");
-
-                foreach (var student in students)
-                {
-                    Console.WriteLine($"{student.student.FirstName} {student.student.LastName} {string.Format("{0:F2}", student.average)}");
-                }
-
-            }
-        }
-        
-        public static void ShowHighestGradeFromClass(int classId)
-        {
-            using (var uctx = new UniversityOfNowhereContext())
-            {
-                var students = uctx.Grades.Where(s => s.ClassId == classId)
-                                .Include(s=>s.Student)
-                                .ToList();
-                    
-                var beststudents = students.Where(s => s.GradeValue == students.Max(g => g.GradeValue));
-
-                string className = uctx.Classes.Where(s => s.ClassId == classId).Select(c => c.ClassName).Single();
-
-                Console.WriteLine($"HIGHEST GRADES IN CLASS {className.ToUpper()}");
-
-                foreach (var student in beststudents)
-                {
-                    Console.WriteLine($"{student.Student.FirstName} {student.Student.LastName} {student.GradeValue}");
-                }
-                             
-            }
-        }
-        
-        public static void ShowGradesFromClass(int classId)
-        {
-            using (var uctx = new UniversityOfNowhereContext())
-            {
-                var grades = uctx.Grades.Where(s => s.ClassId == classId)
-                    .AsEnumerable()
-                    .GroupBy(s=>s.GradeValue)
-                    .OrderByDescending(g=>g.Key);
-
-
-                string className = uctx.Classes.Where(s => s.ClassId == classId).Select(c => c.ClassName).Single();
-
-                Console.WriteLine($"GRADES FROM CLASS {className.ToUpper()}");
-
-                foreach (var grade in grades)
-                {
-                    if (grade.Key != null)
-                    { Console.Write(string.Format("{0:F1}", grade.Key)); }
-                    else { Console.Write("0.0"); }
-
-                    foreach (var student in grade)
-                    {
-                        Console.Write("|");
-                    }
-
-                    Console.Write("\n");
-                }
-
+                return uctx.FieldOfStudies
+                        .Include(f => f.Faculty).ToList();
             }
         }
 
-        /*
-         * other queries */
-
-        public static void ShowAllFacultiesAllFOS()
-        {
-            using(var uctx = new UniversityOfNowhereContext())
-            {
-                var allFos = uctx.FieldOfStudies
-                    .Include(f=>f.Faculty)
-                    .AsEnumerable().GroupBy(s => s.Faculty.FacultyName).ToList();
-
-
-                foreach (var faculty in allFos)
-                {
-                    Console.WriteLine(faculty.Key.ToUpper());
-
-                    foreach (var fos in faculty)
-                    {
-                        Console.WriteLine(fos.FosName);
-                    }
-
-                    Console.WriteLine();
-                }
-            }
-        }
-
-               
     }
 }

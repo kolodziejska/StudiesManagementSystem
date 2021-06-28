@@ -10,6 +10,7 @@ namespace StudiesManagementSystem
 {
     public static partial class Uons
     {
+        //TODO: REFACTOR (or maybe it should be seperate class?)
         //TODO: SEARCH THROUGH STUDENT/FOS/FACULTY NAME, NOT ID
         public static void AddStudent(string firstName, string lastName, string birthdate)
         {

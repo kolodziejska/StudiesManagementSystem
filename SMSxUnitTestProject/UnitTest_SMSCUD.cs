@@ -55,6 +55,7 @@ namespace SMSxUnitTestProject
 
 
                 //test if student was added to new classes - THIS FAILS BUT IDK WHY
+                //TODO: TRY TO COMPARE ONLY CLASS ID?
 
                 var gradesactual = uctx.Grades
                                     .Where(g => g.StudentId == studentId && g.Class.FosId == fosId
