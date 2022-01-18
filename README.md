@@ -12,12 +12,6 @@ to connect, update and write to database.
 The project includes unit tests for some methods; another methods were attempted through TDD. Although *all* tests need to be rewritten
 for better approach (see *Project status and direction for improvements* section).
 
-### Technologies used
-- .NET Core v5.0.10
-- Entity Framework Core v5.0.7
-- Microsoft SQL Server v15.0
-- xunit v2.4.1
-
 ### Features
 - add new students and update existing data
 - add a student to all classes based on their field of study and year
@@ -29,6 +23,12 @@ for better approach (see *Project status and direction for improvements* section
 - display all students with an average grade higher than average grade of faculty
 - display highest grade from class
 - display all grades from class (as a chart)
+
+### Technologies and dependencies
+- .NET Core v5.0.10
+- Entity Framework Core v5.0.7
+- Microsoft SQL Server v15.0
+- xunit v2.4.1
 
 ___
 
